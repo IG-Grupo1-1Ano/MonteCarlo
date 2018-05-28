@@ -4,7 +4,7 @@
 #include <time.h>
 #define BILLION  1E9 //Definição de número de ciclos por Segundo no CPU
 #define NUMTHR_MAX 8  // Numero máximo de threads
-#define PI 3.141592 //valor de pi até a 15a casa depois da virgula, apenas para fins de comparacao com o valor obtido no fim
+#define PI 3.141592 //valor de pi até a 6a casa depois da virgula, apenas para fins de comparacao com o valor obtido no fim
 
 
 //agrega as variáveis a serem utilizadas para threads e para ciclos
