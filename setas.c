@@ -4,6 +4,8 @@
 #include <time.h>
 #define BILLION  1E9 //Definição de número de ciclos por Segundo no CPU
 #define NUMTHR_MAX 8  // Numero máximo de threads
+#define PI 3.141592 //valor de pi até a 15a casa depois da virgula, apenas para fins de comparacao com o valor obtido no fim
+
 
 //agrega as variáveis a serem utilizadas para threads e para ciclos
 typedef struct t_nfo {
@@ -18,26 +20,29 @@ void *calcula (void *param); // sorteia e verifica os pontos pela thread
 
 
 int main (int argc, char *argv[]) {
-		struct timespec requestStart, requestEnd;
-		clock_gettime(CLOCK_REALTIME, &requestStart);
+    struct timespec requestStart, requestEnd;
+
     int j;
     int i;
     double pi = 0;  // contem o valor de pi
     int totalp = 0; // total de pontos
     int totalc = 0; // pontos no circulo
+    double valor_pi=0, erro = 0, acum = 0;
     pthread_t tid[NUMTHR_MAX];  // ID das threads
 
 
-
-// MATRIZ PARA AS THREADS
+    // MATRIZ PARA AS THREADS
     int threads[] = {2, 4, 6, 8};
     int treads_size = (int)sizeof(threads)/sizeof(threads[0]);
 
-// MATRIZ PARA OS CICLOS
+    // MATRIZ PARA OS CICLOS
     int ciclos[] = {500, 20000, 100000, 1000000, 10000000};
     int ciclos_size = (int)sizeof(ciclos)/sizeof(ciclos[0]);
     for (int t = 0; t < treads_size; t++) {
+
+
         for (int c = 0; c < ciclos_size; c++) {
+					clock_gettime(CLOCK_REALTIME, &requestStart);
             printf("\n== %i TREADS ==|== %i CICLOS  ==\n", threads[t], ciclos[c]);
 
             // Para todas as threads
@@ -72,25 +77,28 @@ int main (int argc, char *argv[]) {
             }
 
             // Calcula o valor de pi e imprime na tela
-            pi = 4.0 * (((double) totalc) / ((double) totalp));
+            valor_pi = 4.0 * (((double) totalc) / ((double) totalp));
             // transforma totalp
             // e totalc em double
 
+            erro = valor_pi - PI;
 
-            printf("\n\nValor de pi:%f \n", pi);
+            printf("\n\nValor de pi:%f \n", valor_pi);
+            printf("Diferença em Relação ao PI ideal : %.6f \n\n",erro);
 
-
-
-				 clock_gettime(CLOCK_REALTIME, &requestEnd);
+             clock_gettime(CLOCK_REALTIME, &requestEnd);
 		     // Cálculo do tempo dispendido
 
-		     double acum = ((requestEnd.tv_sec - requestStart.tv_sec) + (requestEnd.tv_nsec - requestStart.tv_nsec) / BILLION);
+            double tempo_ciclo =  ((requestEnd.tv_sec - requestStart.tv_sec) + (requestEnd.tv_nsec - requestStart.tv_nsec) / BILLION);
+            acum += tempo_ciclo;
 
-				 printf( "Tempo Acumulado: %f\n", acum );
-
+            printf( "Tempo Ciclo: %f\n", tempo_ciclo );
         }
     }
-		return 0;
+
+    printf( "Tempo Acumulado: %f\n", acum );
+
+    return 0;
 }
 
 
