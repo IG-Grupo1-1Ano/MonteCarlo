@@ -1,85 +1,117 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <time.h>
+#define BILLION  10E9 //Definição de número de ciclos por Segundo no CPU
+#define NUMTHR_MAX 8  // Numero máximo de threads
+
+//agrega as variáveis a serem utilizadas para threads e para ciclos
+typedef struct t_nfo {
+    int tid;
+    int ciclos;
+};
+
+int num_ptos [NUMTHR_MAX]; // Total de pontos da thread
+int num_ptos_cir[NUMTHR_MAX]; // Pontos no circulo
+
+void *calcula (void *param); // sorteia e verifica os pontos pela thread
 
 
-#define NUMTHR 10  // Numero total de threads
-
-int num_ptos [10]; // Total de pontos da thread 
-int num_ptos_cir[10]; // Pontos no circulo
-
-
-void *calcula (void *param); // sorteia e verifica os pontos pela thread 
-
-
-int main (int argc, char *argv[]){
-
-	int j;
-	int i;
-	double pi = 0;  // contem o valor de pi
-	int totalp = 0; // total de pontos
-	int totalc = 0; // pontos no circulo
-	pthread_t tid[10];  // ID das threads
+int main (int argc, char *argv[]) {
+		struct timespec requestStart, requestEnd;
+		clock_gettime(CLOCK_REALTIME, &requestStart);
+    int j;
+    int i;
+    double pi = 0;  // contem o valor de pi
+    int totalp = 0; // total de pontos
+    int totalc = 0; // pontos no circulo
+    pthread_t tid[NUMTHR_MAX];  // ID das threads
 
 
-	// Para todas as threads      
-	for (i = 0; i< NUMTHR ; i++){
-	// cria a i-esima thread
-	pthread_create (&tid[i], NULL, calcula, &i);
-       }	
 
-	// Para cada thread 
-	for (i = 0; i< NUMTHR ; i++){
-	// espera que as threads terminem
-	pthread_join (tid[i], NULL);
-       }	
+// MATRIZ PARA AS THREADS
+    int threads[] = {2, 4, 6, 8};
+    int treads_size = (int)sizeof(threads)/sizeof(threads[0]);
 
-      for (i = 0; i< NUMTHR ; i++){
-          totalp += num_ptos[i];  // totalp = totalp + num_ptos[i]
-          totalc += num_ptos_cir[i]; // totalc = totalp + num_ptos[i]
-       }	
+// MATRIZ PARA OS CICLOS
+    int ciclos[] = {500, 20000, 100000, 1000000, 10000000};
+    int ciclos_size = (int)sizeof(ciclos)/sizeof(ciclos[0]);
+    for (int t = 0; t < treads_size; t++) {
+        for (int c = 0; c < ciclos_size; c++) {
+            printf("\n== %i TREADS ==|== %i CICLOS  ==\n", threads[t], ciclos[c]);
+
+            // Para todas as threads
+            for (i = 0; i < threads[t]; i++) {
+
+                struct t_nfo nfo;
+
+                nfo.tid = i;
+                nfo.ciclos = ciclos[c];
+
+                // cria a i-esima thread
+                pthread_create(&tid[i], NULL, calcula, &nfo);
+            }
+
+            // Para cada thread
+            for (i = 0; i < threads[t]; i++) {
+
+                // espera que as threads terminem
+                pthread_join(tid[i], NULL);
+
+                // Imprime na tela a qtde de pontos no círculo
+                // e no total de cada thread
+                printf("\nPontos no Circulo %d : %d ", i + 1, num_ptos_cir[i] + 1);
+                printf("\nTotal de Pontos   %d : %d ", i + 1, num_ptos[i] + 1 );
+
+            }
 
 
-// Calcula o valor de pi e imprime na tela	
-	pi = 4.0*(((double)totalc)/((double)totalp)); // transforma totalp
-						      // e totalc em double
-							
-	printf("\nValor de pi:%f \n",pi);
+            for (i = 0; i < threads[t]; i++) {
+                totalp += num_ptos[i];  // totalp = totalp + num_ptos[i]
+                totalc += num_ptos_cir[i]; // totalc = totalp + num_ptos[i]
+            }
+
+            // Calcula o valor de pi e imprime na tela
+            pi = 4.0 * (((double) totalc) / ((double) totalp));
+            // transforma totalp
+            // e totalc em double
+
+
+            printf("\n\nValor de pi:%f \n", pi);
+
+
+
+				 clock_gettime(CLOCK_REALTIME, &requestEnd);
+		     // Cálculo do tempo dispendido
+
+		     double acum = ((requestEnd.tv_sec - requestStart.tv_sec) + (requestEnd.tv_nsec - requestStart.tv_nsec) / BILLION);
+
+				 printf( "Tempo Acumulado: %f\n", acum );
+
+        }
+    }
 }
 
 
-
-
-
 void *calcula (void *param) {
+    int i;
+    struct t_nfo nfo = *((struct t_nfo *)param);
+    double x,y,quad;
+    num_ptos[nfo.tid] = 0;
+    num_ptos_cir[nfo.tid] = 0;
 
-	int i;
-	int thrnum = *((int *)param); // O número da thread ()
-	double x,y,quad;
-	num_ptos[thrnum] = 0;
-	num_ptos_cir[thrnum] = 0;
+    for (i = 0; i<nfo.ciclos; i++) {
+        x = drand48(); // sorteia um número de 0 a 1
+        y = drand48(); // sorteia um número de 0 a 1
+        quad = ((x*x) + (y*y));
 
-	for (i = 0; i<1000000; i++){
+        // Se a soma dos quadrados for menor que R = 1
+        // então caiu no círculo
+        if (quad <= 1)
+            num_ptos_cir[nfo.tid] ++; // conta pontos no círculo
 
-		x = drand48(); // sorteia um número de 0 a 1
-		y = drand48(); // sorteia um número de 0 a 1
-		quad = ((x*x) + (y*y));
-		// Se a soma dos quadrados for menor que R = 1
-		// então caiu no círculo		
-		if (quad <= 1){
-			num_ptos_cir[thrnum] ++; // conta pontos no círculo		
-		}
+        num_ptos[nfo.tid] ++; // incrementa os pontos totais da thread N (0 a 9)
+    }
 
-		num_ptos[thrnum] ++; // incrementa os pontos totais da thread N (0 a 9)
-
-		// A cada 1000 mil iterações imprime na tela
-                if (i%1000000==0)
-                        printf("\nthread: %i n",thrnum);
-	}
-
-	// Imprime na tela a qtde de pontos no círculo
-	// e no total de cada thread 
-	printf ("\nPontos no Circulo %d : %d ",thrnum,num_ptos_cir[thrnum]);
-	printf ("\nTotal de Pontos   %d : %d ",thrnum,num_ptos[thrnum]);	
-	pthread_exit(0);
+    pthread_exit(0);
 }
