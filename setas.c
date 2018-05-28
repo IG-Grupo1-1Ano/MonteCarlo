@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <time.h>
-#define BILLION  10E9 //Definição de número de ciclos por Segundo no CPU
+#define BILLION  1E9 //Definição de número de ciclos por Segundo no CPU
 #define NUMTHR_MAX 8  // Numero máximo de threads
 
 //agrega as variáveis a serem utilizadas para threads e para ciclos
